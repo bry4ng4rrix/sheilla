@@ -1,0 +1,142 @@
+================================================================================
+    SYSTEME DE GESTION DES RESSOURCES HUMAINES (SGRH) - JIRAMA ANTSIRABE
+                     EXPLICATION DETAILLEE DES FONCTIONNALITES
+================================================================================
+
+Projet : Application Web de Gestion des Ressources Humaines
+Contexte : JIRAMA Antsirabe (Memoire de fin d'etudes de Sheilla)
+Type d'architecture : Application web 3-tiers (Interface Utilisateur, Logique Metier, Base de Donnees)
+
+--------------------------------------------------------------------------------
+1. PRESENTATION GENERALE ET OBJECTIFS DU SYSTEME
+--------------------------------------------------------------------------------
+L'application vise a repondre aux difficultes rencontrees actuellement par le service des ressources humaines de la JIRAMA (dispersion des dossiers physiques, lenteur du traitement des demandes d'absence, manque de centralisation des donnees et de visibilite sur les presences).
+
+Le systeme centralise les donnees des employes dans un espace numerique securise, automatise les processus administratifs, permet le suivi rigoureux de l'assiduite et facilite la prise de decision de la direction grace a des indicateurs statistiques fiables.
+
+
+--------------------------------------------------------------------------------
+2. LES PROFILS D'UTILISATEURS ET LEURS ROLES (RBAC)
+--------------------------------------------------------------------------------
+L'acces a l'application est strictement cloisonne selon trois profils d'utilisateurs :
+
+A. L'ADMINISTRATEUR
+   - Gestion des comptes : creation, modification, activation et desactivation des comptes utilisateurs.
+   - Attribution des roles et gestion des permissions.
+   - Configuration generale et securisation de la plateforme.
+   - Consultation des tableaux de bord administratifs.
+
+B. LE RESPONSABLE RH
+   - Gestion administrative complete du personnel : dossiers individuels, contrats, historique.
+   - Gestion de l'organisation interne : creation et gestion des Services et des Postes.
+   - Traitement des demandes d'absence et de conges : examen, validation ou refus motive.
+   - Suivi du temps et des presences : consultation des pointages, detection des retards et anomalies.
+   - Communication interne : redaction et publication des annonces d'entreprise avec visuels.
+   - Pilotage : consultation des statistiques en temps reel, KPIs et generation de rapports.
+
+C. L'EMPLOYE
+   - Acces a son espace personnel securise.
+   - Consultation de ses informations personnelles et professionnelles.
+   - Formulation de demandes de conges ou d'autorisations d'absence avec ajout de justificatifs.
+   - Suivi de l'etat d'avancement de ses demandes (en attente, validee, refusee).
+   - Consultation de ses presences et de ses pointages enregistres.
+   - Consultation des annonces internes publiees par les RH et reception des notifications.
+
+
+--------------------------------------------------------------------------------
+3. EXPLICATION DETAILLEE DES MODULES FONCTIONNELS
+--------------------------------------------------------------------------------
+
+MODULE 1 : AUTHENTIFICATION ET GESTION DES ACCES (BF01, BF02)
+--------------------------------------------------------------
+- Connexion securisee : Chaque utilisateur accede a la plateforme a l'aide de son identifiant (adresse e-mail professionnelle) et d'un mot de passe chiffre.
+- Protection des routes et sessions : Les pages et actions sont automatiquement filtrees selon le role de la personne connectee (un employe ne peut pas acceder aux fonctions RH).
+- Gestion du mot de passe oublie : Possibilite d'engager une reinitialisation de mot de passe securisee.
+- Blocage immediat : L'acces est instantanement interdit aux comptes desactives ou non autorises.
+- Unicite compte / agent : Un compte utilisateur correspond obligatoirement a un unique employe physique.
+
+
+MODULE 2 : GESTION DE L'ORGANISATION - SERVICES ET POSTES (BF04)
+----------------------------------------------------------------
+- Services : Enregistrement et structuration des differents services et departements de la JIRAMA (ex. Service Distribution, Service Production, Service Administratif et Financier).
+- Postes : Definition des postes de travail et corps de metiers (ex. Plombier, Electricien, Monteur de ligne, Medecin d'entreprise, Releveur de compte, Gestionnaire financier).
+- Relations organisationnelles : Chaque poste de travail est lie au service auquel il est rattache.
+
+
+MODULE 3 : GESTION ADMINISTRATIVE DU PERSONNEL (BF03, BF08)
+------------------------------------------------------------
+- Liste visuelle sous forme de cartes : Affichage de l'annuaire des salaries avec photo, nom complet, fonction/poste et boutons d'actions directes (Modifier, Supprimer).
+- Dossier individuel complet : Centralisation de toutes les donnees de l'employe :
+  * Identite : Nom, prenom, sexe, age, matricule unique.
+  * Coordonnees : Adresse e-mail, adresse de residence.
+  * Carriere : Service de rattachement, poste occupe, date de recrutement.
+  * Photographie de profil.
+- Recherche multi-criteres rapide : Barre de recherche instantanee permettant de retrouver un collaborateur par son nom, son numero de matricule, son service ou son poste.
+- Conservation de l'historique et desactivation (Soft-delete) : Lorsqu'un employe quitte l'entreprise ou est desactive, son compte est bloque mais l'ensemble de son dossier et son historique (contrats, conges passes, pointages) restent preserved pour la conformite administrative.
+
+
+MODULE 4 : DEMATERIALISATION DES CONGES ET ABSENCES (BF05, BF06)
+----------------------------------------------------------------
+- Depot de demande par l'employe :
+  * Choix de la nature de la demande : conge annuel, conge de maladie, autorisation d'absence exceptionnelle, etc.
+  * Saisie obligatoire des dates de debut et de fin de l'absence.
+  * Explication obligatoire du motif de la demande.
+  * Televersement de pieces jointes justificatives (ex. certificat medical, convocation administrative).
+- Traitement par le Responsable RH :
+  * Tableau de suivi des requetes avec filtre de statut (En attente, Validee, Refusee, Annulee).
+  * Validation d'une demande en un clic.
+  * Refus encadre : obligation absolue pour le RH de consigner un motif explicite de refus.
+  * Notification immediate transmise a l'employe des qu'une decision est prise.
+
+
+MODULE 5 : GESTION DU TEMPS ET DES PRESENCES (BF07)
+----------------------------------------------------
+- Pointage des entrees et des sorties : Enregistrement precis de la date et de l'heure d'arrivee et de depart de chaque salarie.
+- Adaptation au travail poste : Prise en charge des horaires specifiques aux agents de terrain et techniciens de la JIRAMA (horaires decales, rotations, equipes de jour/nuit).
+- Detection automatique des anomalies : Identification et signalement en temps reel des retards, des absences injustifiees ou des oublis de pointage.
+- Historique d'assiduite : Consultation de la feuille de presence d'un salarie donne ou d'un service sur une periode definie (journaliere, hebdomadaire ou mensuelle).
+
+
+MODULE 6 : COMMUNICATION INTERNE - ANNONCES ET NOTIFICATIONS
+-------------------------------------------------------------
+- Annonces d'entreprise : Le responsable RH peut rediger et diffuser des communiques officiels, notes de service ou informations urgentes en y associant du texte, une date et une photographie/visuel.
+- Fil d'actualite pour les salaries : Les employes retrouvent sur leur tableau de bord les informations utiles de l'entreprise.
+- Centre de notifications : Generation automatique de notifications lors d'evenements majeurs (validation/refus d'une demande de conge, publication d'une nouvelle note d'information). Suivi de lecture (lu / non-lu).
+
+
+MODULE 7 : TABLEAU DE BORD, REPORTING ET ANALYSE (BF09)
+--------------------------------------------------------
+- Indicateurs cles (Cartes KPIs sur le Dashboard) :
+  1. Nombre total d'employes : Effectif actif global des salaries enregistres.
+  2. Demandes en attente : Volume de requetes de conge attendant l'arbitrage des RH.
+  3. Taux moyen de presence : Pourcentage calculant l'assiduite globale au sein de l'entreprise.
+  4. Nombre de services et postes : Etat de la couverture organisationnelle.
+- Graphiques statistiques interactifs :
+  * Graphique mensuel en barres : Comparaison sur les 12 mois de l'annee entre l'effectif des salaries et le volume de demandes d'absence recues.
+  * Graphique circulaire (Donut) : Repartition moyenne globale du taux de presence versus taux d'absence.
+- Exportations : Generation d'etats et rapports administratifs imprimables (PDF / Excel).
+
+
+--------------------------------------------------------------------------------
+4. REGLES DE GESTION METIER PRINCIPALES (RG)
+--------------------------------------------------------------------------------
+1. RG01 - Matricule unique : Chaque salarie possede un matricule strictement unique pour eviter les doublons.
+2. RG02 - Unicite de compte : Un compte utilisateur ne peut correspondre qu'a un unique salarie physique.
+3. RG03 - Validite d'une demande : Une demande de conge doit obligatoirement avoir une date de debut, une date de fin valide (debut <= fin) et un motif clair.
+4. RG04 - Statut suspensif : Une demande a l'etat "En attente" ne donne pas droit a l'absence tant qu'elle n'est pas "Validee".
+5. RG05 - Motivation obligatoire du refus : Tout refus d'une demande d'absence doit comporter une justification ecrite conservee dans le systeme.
+6. RG06 - Tracabilite et audit : Chaque action critique (creation d'employe, modification de droits, validation de conge) est enregistree avec l'auteur, la date et la nature de l'action.
+7. RG07 - Confidentialite des dossiers : Un salarie ne peut consulter que son propre dossier et ne peut en aucun cas modifier les donnees administratives gerees par les RH.
+8. RG08 - Conservation des archives : La desactivation d'un salarie (depart, fin de contrat) n'efface jamais son historique de presence, de pointage ou de conges.
+
+
+--------------------------------------------------------------------------------
+5. CALENDRIER DE REALISATION EN 6 PHASES (ROADMAP)
+--------------------------------------------------------------------------------
+- Phase 1 : Socle technique, Authentification securisee et controle d'acces (BF01, BF02).
+- Phase 2 : Organisation (Services/Postes) et Gestion des dossiers Employes (BF03, BF04, BF08).
+- Phase 3 : Module de gestion et validation des Conges & Absences (BF05, BF06).
+- Phase 4 : Gestion du temps, Pointages et Suivi des anomalies (BF07).
+- Phase 5 : Communication d'entreprise (Annonces et Notifications).
+- Phase 6 : Tableaux de bord, Graphiques KPIs, Export de rapports et Recette (BF09).
+================================================================================
