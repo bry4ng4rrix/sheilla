@@ -1,0 +1,15 @@
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
+  prisma: true
+  "@prisma/client": true
+  "@prisma/engines": true
+  esbuild: true
+# pnpm 9/10 (versions utilisées par défaut sur Vercel sans corepack)
+onlyBuiltDependencies:
+  - sharp
+  - unrs-resolver
+  - prisma
+  - "@prisma/client"
+  - "@prisma/engines"
+  - esbuild

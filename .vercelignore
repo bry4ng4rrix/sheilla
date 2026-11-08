@@ -1,0 +1,10 @@
+# Jamais envoyés à Vercel : secrets, données locales, artefacts
+.env
+.env.local
+data/
+storage/
+backups/
+.next/
+node_modules/
+test-results/
+playwright-report/

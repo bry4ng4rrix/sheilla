@@ -1,0 +1,495 @@
+// GRH JIRAMA Antsirabe — modèle de données SQLite
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────── Enums ─────────────
+
+enum ApprovalStatus {
+  PENDING // inscription en attente de validation par un administrateur
+  APPROVED
+  REJECTED
+}
+
+enum Gender {
+  M
+  F
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  SUSPENDED
+  LEFT
+}
+
+enum ContractType {
+  CDI
+  CDD
+  STAGE
+  PRESTATAIRE
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  EXCEPTIONAL
+  MATERNITY
+  PATERNITY
+  OTHER
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum Decision {
+  APPROVED
+  REJECTED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  ANOMALY
+  AUTHORIZED
+  LEAVE
+  OFF
+}
+
+enum PunchType {
+  IN
+  OUT
+}
+
+enum PunchSource {
+  SELF
+  HR
+  IMPORT
+}
+
+enum ScheduleKind {
+  WEEKLY // motif sur 7 jours (lun → dim)
+  CYCLE // rotation de N jours à partir de cycleStart
+}
+
+enum ScheduleCategory {
+  STANDARD
+  SHIFTED
+  NIGHT
+  ROTATING
+}
+
+enum OverrideKind {
+  SHIFT
+  REST
+  ON_CALL
+}
+
+enum AnnouncementType {
+  NOTE_SERVICE
+  COMMUNIQUE
+  URGENT
+  GENERAL
+}
+
+enum PublicationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// ───────────── Sécurité / RBAC ─────────────
+
+model Role {
+  id          String           @id @default(cuid())
+  code        String           @unique // ADMIN | HR | EMPLOYEE
+  name        String
+  description String?
+  users       User[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  code        String           @unique
+  description String
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model User {
+  id                 String         @id @default(cuid())
+  email              String         @unique
+  name               String
+  passwordHash       String
+  roleId             String
+  role               Role           @relation(fields: [roleId], references: [id])
+  employeeId         String?        @unique // RG02 : 1 compte ↔ 1 employé (null = compte technique)
+  employee           Employee?      @relation(fields: [employeeId], references: [id])
+  isActive           Boolean        @default(true)
+  approvalStatus     ApprovalStatus @default(APPROVED)
+  requestedMatricule String? // matricule déclaré à l'inscription, pour retrouver le dossier
+  reviewNote         String? // motif d'un refus d'inscription
+  failedAttempts     Int            @default(0)
+  lockedUntil        DateTime?
+  lastLoginAt        DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  resetTokens       PasswordResetToken[]
+  decisions         LeaveDecision[]
+  announcements     Announcement[]
+  announcementReads AnnouncementRead[]
+  punchesEntered    AttendanceEvent[]    @relation("PunchAuthor")
+  recordsResolved   AttendanceRecord[]   @relation("RecordResolver")
+
+  @@index([roleId])
+  @@index([isActive])
+  @@index([approvalStatus])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+// ───────────── Organisation ─────────────
+
+model Department {
+  id          String     @id @default(cuid())
+  code        String     @unique
+  name        String     @unique
+  description String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  positions   Position[]
+  teams       Team[]
+
+  @@index([name])
+}
+
+model Position {
+  id           String     @id @default(cuid())
+  title        String
+  description  String?
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  employees    Employee[]
+
+  @@unique([departmentId, title])
+  @@index([title])
+}
+
+model Employee {
+  id            String         @id @default(cuid())
+  matricule     String         @unique // RG01
+  firstName     String
+  lastName      String
+  gender        Gender
+  birthDate     DateTime?
+  address       String?
+  phone         String?
+  email         String?
+  photoKey      String?
+  positionId    String
+  position      Position       @relation(fields: [positionId], references: [id])
+  teamId        String?
+  team          Team?          @relation(fields: [teamId], references: [id])
+  scheduleId    String? // planning individuel (prioritaire sur celui de l'équipe)
+  schedule      WorkSchedule?  @relation(fields: [scheduleId], references: [id])
+  hireDate      DateTime
+  contractType  ContractType
+  status        EmployeeStatus @default(ACTIVE)
+  departureDate DateTime?
+  extra         String? // champs extensibles (JSON)
+  deletedAt     DateTime? // désactivation logique (RG08)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  user              User?
+  contracts         Contract[]
+  leaveRequests     LeaveRequest[]
+  attendanceRecords AttendanceRecord[]
+  attendanceEvents  AttendanceEvent[]
+  scheduleOverrides EmployeeSchedule[]
+
+  @@index([lastName, firstName])
+  @@index([positionId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model Contract {
+  id         String       @id @default(cuid())
+  employeeId String
+  employee   Employee     @relation(fields: [employeeId], references: [id])
+  type       ContractType
+  startDate  DateTime
+  endDate    DateTime?
+  notes      String?
+  createdAt  DateTime     @default(now())
+
+  @@index([employeeId])
+}
+
+// ───────────── Congés ─────────────
+
+model LeaveRequest {
+  id          String            @id @default(cuid())
+  employeeId  String
+  employee    Employee          @relation(fields: [employeeId], references: [id])
+  type        LeaveType
+  startDate   DateTime
+  endDate     DateTime
+  days        Int
+  reason      String
+  status      LeaveStatus       @default(PENDING)
+  cancelledAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  attachments LeaveAttachment[]
+  decisions   LeaveDecision[]
+
+  @@index([employeeId, status])
+  @@index([status])
+  @@index([startDate, endDate])
+}
+
+model LeaveAttachment {
+  id             String       @id @default(cuid())
+  leaveRequestId String
+  leaveRequest   LeaveRequest @relation(fields: [leaveRequestId], references: [id])
+  fileKey        String       @unique
+  originalName   String
+  mimeType       String
+  size           Int
+  createdAt      DateTime     @default(now())
+}
+
+model LeaveDecision {
+  id             String       @id @default(cuid())
+  leaveRequestId String
+  leaveRequest   LeaveRequest @relation(fields: [leaveRequestId], references: [id])
+  decision       Decision
+  comment        String?
+  decidedById    String
+  decidedBy      User         @relation(fields: [decidedById], references: [id])
+  decidedAt      DateTime     @default(now())
+
+  @@index([leaveRequestId])
+}
+
+model Holiday {
+  id        String   @id @default(cuid())
+  date      DateTime @unique // minuit UTC du jour férié
+  name      String
+  createdAt DateTime @default(now())
+}
+
+// ───────────── Présences & horaires ─────────────
+
+model Shift {
+  id           String  @id @default(cuid())
+  code         String  @unique // ex : J, M, A, N
+  name         String
+  startTime    String // "HH:mm"
+  endTime      String // "HH:mm" — si <= startTime, le poste traverse minuit
+  graceMinutes Int     @default(10)
+  color        String  @default("#EF8200")
+  isActive     Boolean @default(true)
+
+  overrides EmployeeSchedule[]
+}
+
+model WorkSchedule {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  category    ScheduleCategory
+  kind        ScheduleKind
+  pattern     String // codes de postes séparés par des virgules, "R" = repos
+  cycleStart  DateTime? // requis pour kind = CYCLE
+  description String?
+  isDefault   Boolean          @default(false)
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  teams       Team[]
+  employees   Employee[]
+}
+
+model Team {
+  id             String        @id @default(cuid())
+  name           String        @unique
+  departmentId   String
+  department     Department    @relation(fields: [departmentId], references: [id])
+  scheduleId     String?
+  schedule       WorkSchedule? @relation(fields: [scheduleId], references: [id])
+  rotationOffset Int           @default(0) // décalage dans le cycle (équipes A/B/C…)
+  description    String?
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  members        Employee[]
+}
+
+model EmployeeSchedule {
+  id         String       @id @default(cuid())
+  employeeId String
+  employee   Employee     @relation(fields: [employeeId], references: [id])
+  date       DateTime // minuit UTC du jour planifié
+  kind       OverrideKind
+  shiftId    String?
+  shift      Shift?       @relation(fields: [shiftId], references: [id])
+  note       String?
+  createdAt  DateTime     @default(now())
+
+  @@unique([employeeId, date, kind])
+  @@index([date])
+}
+
+model AttendanceRecord {
+  id              String            @id @default(cuid())
+  employeeId      String
+  employee        Employee          @relation(fields: [employeeId], references: [id])
+  date            DateTime // jour de travail (minuit UTC), un poste de nuit reste sur son jour de début
+  checkIn         DateTime?
+  checkOut        DateTime?
+  status          AttendanceStatus
+  lateMinutes     Int               @default(0)
+  overtimeMinutes Int               @default(0)
+  anomalies       String? // codes séparés par des virgules
+  manualStatus    AttendanceStatus? // statut imposé par les RH après traitement
+  notes           String?
+  resolvedAt      DateTime?
+  resolvedById    String?
+  resolvedBy      User?             @relation("RecordResolver", fields: [resolvedById], references: [id])
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  events          AttendanceEvent[]
+
+  @@unique([employeeId, date])
+  @@index([date, status])
+}
+
+model AttendanceEvent {
+  id          String            @id @default(cuid())
+  employeeId  String
+  employee    Employee          @relation(fields: [employeeId], references: [id])
+  recordId    String?
+  record      AttendanceRecord? @relation(fields: [recordId], references: [id])
+  type        PunchType
+  timestamp   DateTime
+  source      PunchSource
+  note        String?
+  createdById String?
+  createdBy   User?             @relation("PunchAuthor", fields: [createdById], references: [id])
+  createdAt   DateTime          @default(now())
+
+  @@index([employeeId, timestamp])
+}
+
+// ───────────── Communication ─────────────
+
+model Announcement {
+  id          String                   @id @default(cuid())
+  title       String
+  type        AnnouncementType
+  content     String
+  status      PublicationStatus        @default(DRAFT)
+  authorId    String
+  author      User                     @relation(fields: [authorId], references: [id])
+  publishedAt DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+  attachments AnnouncementAttachment[]
+  reads       AnnouncementRead[]
+
+  @@index([status, publishedAt])
+}
+
+model AnnouncementAttachment {
+  id             String       @id @default(cuid())
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  fileKey        String       @unique
+  originalName   String
+  mimeType       String
+  size           Int
+  createdAt      DateTime     @default(now())
+}
+
+model AnnouncementRead {
+  announcementId String
+  userId         String
+  readAt         DateTime     @default(now())
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([announcementId, userId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+}
+
+// ───────────── Système ─────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  before    String? // JSON
+  after     String? // JSON
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@index([action])
+}
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
