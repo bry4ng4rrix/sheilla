@@ -71,12 +71,6 @@ export const NAV: NavGroup[] = [
     label: "Ressources humaines",
     items: [
       {
-        href: "/employees",
-        label: "Personnel",
-        icon: Users,
-        perm: "employees.view",
-      },
-      {
         href: "/hr/leave-requests",
         label: "Demandes de congé",
         icon: ClipboardCheck,
