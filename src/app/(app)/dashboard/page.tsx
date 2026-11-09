@@ -110,7 +110,6 @@ async function HrDashboard() {
           label="Employés actifs"
           value={s.activeEmployees}
           icon={<Users />}
-          href="/employees"
           hint={`${s.departments} services · ${s.positions} postes`}
         />
         <KpiCard
@@ -282,7 +281,6 @@ async function AdminDashboard() {
           label="Effectif global"
           value={s.activeEmployees}
           icon={<Users />}
-          href="/employees"
         />
         <KpiCard
           label="Comptes actifs"
