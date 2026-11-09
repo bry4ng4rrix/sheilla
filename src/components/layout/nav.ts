@@ -14,7 +14,6 @@ import {
   ShieldCheck,
   TriangleAlert,
   UserRound,
-  Users,
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
