@@ -17,7 +17,7 @@
     "db:backup": "tsx scripts/backup.mts",
     "postinstall": "prisma generate",
     "db:turso": "tsx scripts/migrate-turso.mts",
-    "vercel-build": "pnpm db:turso && next build"
+    "vercel-build": "pnpm db:turso && pnpm exec prisma generate && next build"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

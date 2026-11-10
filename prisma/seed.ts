@@ -1,10 +1,13 @@
 /* Données de démonstration — ne jamais exécuter sur une base de production. */
 import {
+  type AttendanceStatus,
   type ContractType,
   type Gender,
   type LeaveStatus,
   type LeaveType,
+  type Prisma,
 } from "@prisma/client";
+import { randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
 import {
   PERMISSIONS,
@@ -132,48 +135,133 @@ async function main() {
   // ── Organisation
   const depData: [string, string, string, string[]][] = [
     [
-      "SSI", "Service Informatique", "Systèmes, réseaux et support informatique.",
-      ["Chef de service informatique", "Administrateur systèmes et réseaux", "Technicien informatique"],
+      "SSI",
+      "Service Informatique",
+      "Systèmes, réseaux et support informatique.",
+      [
+        "Chef de service informatique",
+        "Administrateur systèmes et réseaux",
+        "Technicien informatique",
+      ],
     ],
     [
-      "SRH", "Service des Ressources Humaines", "Gestion des ressources humaines et du personnel.",
-      ["Chef de service RH", "Gestionnaire financier", "Gestionnaire du personnel", "Assistant RH", "Chargé de recrutement"],
+      "SRH",
+      "Service des Ressources Humaines",
+      "Gestion des ressources humaines et du personnel.",
+      [
+        "Chef de service RH",
+        "Gestionnaire financier",
+        "Gestionnaire du personnel",
+        "Assistant RH",
+        "Chargé de recrutement",
+      ],
     ],
     [
-      "SCOMM", "Service Commercial", "Relation clientèle, facturation et relève des compteurs.",
-      ["Chef de service commercial", "Responsable clientèle", "Responsable de facturation", "Agent commercial", "Caissière", "Releveur de compteur"],
+      "SCOMM",
+      "Service Commercial",
+      "Relation clientèle, facturation et relève des compteurs.",
+      [
+        "Chef de service commercial",
+        "Responsable clientèle",
+        "Responsable de facturation",
+        "Agent commercial",
+        "Caissière",
+        "Releveur de compteur",
+      ],
     ],
     [
-      "SDE", "Service Distribution Électrique", "Exploitation, distribution et dépannage du réseau électrique.",
-      ["Chef de service distribution électrique", "Responsable d'exploitation du réseau électrique", "Électricien", "Dépanneur électrique", "Agent de conduite du réseau électrique"],
+      "SDE",
+      "Service Distribution Électrique",
+      "Exploitation, distribution et dépannage du réseau électrique.",
+      [
+        "Chef de service distribution électrique",
+        "Responsable d'exploitation du réseau électrique",
+        "Électricien",
+        "Dépanneur électrique",
+        "Agent de conduite du réseau électrique",
+      ],
     ],
     [
-      "SPE", "Service Production Électrique", "Production et maintenance électrique.",
-      ["Chef de service production électrique", "Conducteur de groupes électrogènes", "Électromécanicien", "Mécanicien industriel"],
+      "SPE",
+      "Service Production Électrique",
+      "Production et maintenance électrique.",
+      [
+        "Chef de service production électrique",
+        "Conducteur de groupes électrogènes",
+        "Électromécanicien",
+        "Mécanicien industriel",
+      ],
     ],
     [
-      "SEXO", "Service Exploitation Eau", "Traitement, distribution et dépannage des réseaux d'eau.",
-      ["Chef de service exploitation eau", "Responsable de traitement de l'eau", "Technicien hydraulique", "Plombier", "Agent de dépannage des conduites d'eau"],
+      "SEXO",
+      "Service Exploitation Eau",
+      "Traitement, distribution et dépannage des réseaux d'eau.",
+      [
+        "Chef de service exploitation eau",
+        "Responsable de traitement de l'eau",
+        "Technicien hydraulique",
+        "Plombier",
+        "Agent de dépannage des conduites d'eau",
+      ],
     ],
     [
-      "SFIN", "Service Finance", "Gestion financière, comptabilité et trésorerie.",
-      ["Chef de service financier", "Comptable", "Responsable de trésorerie", "Assistante comptable"],
+      "SFIN",
+      "Service Finance",
+      "Gestion financière, comptabilité et trésorerie.",
+      [
+        "Chef de service financier",
+        "Comptable",
+        "Responsable de trésorerie",
+        "Assistante comptable",
+      ],
     ],
     [
-      "SAPPRO", "Service Approvisionnement", "Achats, commandes et gestion des stocks.",
-      ["Chef de service approvisionnement", "Acheteur", "Magasinier", "Gestionnaire des commandes"],
+      "SAPPRO",
+      "Service Approvisionnement",
+      "Achats, commandes et gestion des stocks.",
+      [
+        "Chef de service approvisionnement",
+        "Acheteur",
+        "Magasinier",
+        "Gestionnaire des commandes",
+      ],
     ],
     [
-      "SLA", "Service Logistique Administratif", "Administration, logistique et services généraux.",
-      ["Chef de service logistique et administratif", "Responsable administratif", "Responsable logistique", "Agent d'entretien", "Chauffeur", "Coursier", "Gardien"],
+      "SLA",
+      "Service Logistique Administratif",
+      "Administration, logistique et services généraux.",
+      [
+        "Chef de service logistique et administratif",
+        "Responsable administratif",
+        "Responsable logistique",
+        "Agent d'entretien",
+        "Chauffeur",
+        "Coursier",
+        "Gardien",
+      ],
     ],
     [
-      "CMS", "Centre Médical Social", "Santé et accompagnement médical du personnel.",
-      ["Médecin responsable", "Médecin généraliste", "Aide-soignante", "Secrétaire médicale", "Gestionnaire de pharmacie", "Assistante médicale"],
+      "CMS",
+      "Centre Médical Social",
+      "Santé et accompagnement médical du personnel.",
+      [
+        "Médecin responsable",
+        "Médecin généraliste",
+        "Aide-soignante",
+        "Secrétaire médicale",
+        "Gestionnaire de pharmacie",
+        "Assistante médicale",
+      ],
     ],
     [
-      "SCC", "Service Contrôle et Coordination", "Contrôle de gestion, suivi technique et coordination.",
-      ["Chef de service contrôle et coordination", "Contrôleur de gestion", "Contrôleur technique"],
+      "SCC",
+      "Service Contrôle et Coordination",
+      "Contrôle de gestion, suivi technique et coordination.",
+      [
+        "Chef de service contrôle et coordination",
+        "Contrôleur de gestion",
+        "Contrôleur technique",
+      ],
     ],
   ];
   const positions: Record<string, string> = {};
@@ -308,58 +396,394 @@ async function main() {
     string | null,
   ];
   const people: E[] = [
-    ["RAKOTONIAINA", "Saturna", "F", "Chef de service informatique", "2018-03-12", "CDI", null],
-    ["RANDRIAMAMPIONONA", "Tiana", "M", "Administrateur systèmes et réseaux", "2015-06-01", "CDI", null],
-    ["RASOANAIVO", "Fetra", "M", "Technicien informatique", "2019-09-16", "CDI", null],
-    ["ANDRIAMIAHAJA", "Lanto", "M", "Chef de service RH", "2017-01-09", "CDI", null],
-    ["RAKOTOMALALA", "Nantenaina", "F", "Gestionnaire financier", "2020-02-03", "CDI", null],
-    ["RAZAFINDRAKOTO", "Mamy", "M", "Gestionnaire du personnel", "2021-04-12", "CDI", null],
+    [
+      "RAKOTONIAINA",
+      "Saturna",
+      "F",
+      "Chef de service informatique",
+      "2018-03-12",
+      "CDI",
+      null,
+    ],
+    [
+      "RANDRIAMAMPIONONA",
+      "Tiana",
+      "M",
+      "Administrateur systèmes et réseaux",
+      "2015-06-01",
+      "CDI",
+      null,
+    ],
+    [
+      "RASOANAIVO",
+      "Fetra",
+      "M",
+      "Technicien informatique",
+      "2019-09-16",
+      "CDI",
+      null,
+    ],
+    [
+      "ANDRIAMIAHAJA",
+      "Lanto",
+      "M",
+      "Chef de service RH",
+      "2017-01-09",
+      "CDI",
+      null,
+    ],
+    [
+      "RAKOTOMALALA",
+      "Nantenaina",
+      "F",
+      "Gestionnaire financier",
+      "2020-02-03",
+      "CDI",
+      null,
+    ],
+    [
+      "RAZAFINDRAKOTO",
+      "Mamy",
+      "M",
+      "Gestionnaire du personnel",
+      "2021-04-12",
+      "CDI",
+      null,
+    ],
     ["RANDRIANARISOA", "Haja", "M", "Assistant RH", "2016-11-21", "CDI", null],
-    ["RASOAZANANY", "Voahirana", "F", "Chargé de recrutement", "2014-08-04", "CDI", null],
-    ["RAKOTOZAFY", "Solofo", "M", "Chef de service commercial", "2018-05-14", "CDI", null],
-    ["ANDRIAMIHARY", "Fanja", "F", "Responsable clientèle", "2019-07-01", "CDI", null],
-    ["RAZAFINDRAMANANA", "Njaka", "M", "Responsable de facturation", "2013-10-07", "CDI", null],
-    ["RAVELOMANANA", "Tojo", "M", "Agent commercial", "2020-01-13", "CDI", null],
+    [
+      "RASOAZANANY",
+      "Voahirana",
+      "F",
+      "Chargé de recrutement",
+      "2014-08-04",
+      "CDI",
+      null,
+    ],
+    [
+      "RAKOTOZAFY",
+      "Solofo",
+      "M",
+      "Chef de service commercial",
+      "2018-05-14",
+      "CDI",
+      null,
+    ],
+    [
+      "ANDRIAMIHARY",
+      "Fanja",
+      "F",
+      "Responsable clientèle",
+      "2019-07-01",
+      "CDI",
+      null,
+    ],
+    [
+      "RAZAFINDRAMANANA",
+      "Njaka",
+      "M",
+      "Responsable de facturation",
+      "2013-10-07",
+      "CDI",
+      null,
+    ],
+    [
+      "RAVELOMANANA",
+      "Tojo",
+      "M",
+      "Agent commercial",
+      "2020-01-13",
+      "CDI",
+      null,
+    ],
     ["RASOLOARISON", "Hanitra", "F", "Caissière", "2022-03-01", "CDD", null],
-    ["RANDRIATSIFERANA", "Tovo", "M", "Releveur de compteur", "2017-09-18", "CDI", null],
-    ["ANDRIANJAFY", "Hery", "M", "Chef de service distribution électrique", "2012-02-20", "CDI", "depannage"],
-    ["RAKOTONDRABE", "Faly", "M", "Responsable d'exploitation du réseau électrique", "2023-06-05", "CDI", "depannage"],
-    ["RANDRIAMBOLOLONA", "Toky", "M", "Électricien", "2018-11-05", "CDI", "depannage"],
-    ["RASOANAIVO", "Mamy", "M", "Dépanneur électrique", "2021-08-23", "CDI", "depannage"],
-    ["RAKOTOVAO", "Fenosoa", "M", "Agent de conduite du réseau électrique", "2022-10-03", "CDD", "depannage"],
-    ["RANDRIAMIHARISOA", "Jean Claude", "M", "Chef de service production électrique", "2011-04-11", "CDI", "Équipe A"],
-    ["RAKOTONDRAZAKA", "Solo", "M", "Conducteur de groupes électrogènes", "2019-03-25", "CDI", "Équipe A"],
-    ["ANDRIAMIAHAJA", "Haja", "M", "Électromécanicien", "2024-01-08", "CDI", "Équipe B"],
-    ["RAVELOSON", "Tantely", "M", "Mécanicien industriel", "2025-02-17", "CDD", "Équipe B"],
-    ["RAKOTOMALALA", "Herizo", "M", "Chef de service exploitation eau", "2025-09-01", "CDI", null],
-    ["RANDRIAMAHAMINA", "Voahirana", "F", "Responsable de traitement de l'eau", "2026-03-02", "CDI", null],
-    ["ANDRIATSILAVO", "Tiana", "M", "Technicien hydraulique", "2016-11-21", "CDI", null],
+    [
+      "RANDRIATSIFERANA",
+      "Tovo",
+      "M",
+      "Releveur de compteur",
+      "2017-09-18",
+      "CDI",
+      null,
+    ],
+    [
+      "ANDRIANJAFY",
+      "Hery",
+      "M",
+      "Chef de service distribution électrique",
+      "2012-02-20",
+      "CDI",
+      "depannage",
+    ],
+    [
+      "RAKOTONDRABE",
+      "Faly",
+      "M",
+      "Responsable d'exploitation du réseau électrique",
+      "2023-06-05",
+      "CDI",
+      "depannage",
+    ],
+    [
+      "RANDRIAMBOLOLONA",
+      "Toky",
+      "M",
+      "Électricien",
+      "2018-11-05",
+      "CDI",
+      "depannage",
+    ],
+    [
+      "RASOANAIVO",
+      "Mamy",
+      "M",
+      "Dépanneur électrique",
+      "2021-08-23",
+      "CDI",
+      "depannage",
+    ],
+    [
+      "RAKOTOVAO",
+      "Fenosoa",
+      "M",
+      "Agent de conduite du réseau électrique",
+      "2022-10-03",
+      "CDD",
+      "depannage",
+    ],
+    [
+      "RANDRIAMIHARISOA",
+      "Jean Claude",
+      "M",
+      "Chef de service production électrique",
+      "2011-04-11",
+      "CDI",
+      "Équipe A",
+    ],
+    [
+      "RAKOTONDRAZAKA",
+      "Solo",
+      "M",
+      "Conducteur de groupes électrogènes",
+      "2019-03-25",
+      "CDI",
+      "Équipe A",
+    ],
+    [
+      "ANDRIAMIAHAJA",
+      "Haja",
+      "M",
+      "Électromécanicien",
+      "2024-01-08",
+      "CDI",
+      "Équipe B",
+    ],
+    [
+      "RAVELOSON",
+      "Tantely",
+      "M",
+      "Mécanicien industriel",
+      "2025-02-17",
+      "CDD",
+      "Équipe B",
+    ],
+    [
+      "RAKOTOMALALA",
+      "Herizo",
+      "M",
+      "Chef de service exploitation eau",
+      "2025-09-01",
+      "CDI",
+      null,
+    ],
+    [
+      "RANDRIAMAHAMINA",
+      "Voahirana",
+      "F",
+      "Responsable de traitement de l'eau",
+      "2026-03-02",
+      "CDI",
+      null,
+    ],
+    [
+      "ANDRIATSILAVO",
+      "Tiana",
+      "M",
+      "Technicien hydraulique",
+      "2016-11-21",
+      "CDI",
+      null,
+    ],
     ["RAKOTONIRINA", "Feno", "M", "Plombier", "2018-03-12", "CDI", null],
-    ["RAZAFINDRABE", "Manda", "M", "Agent de dépannage des conduites d'eau", "2015-06-01", "CDD", null],
-    ["ANDRIAMPARANY", "Haja", "M", "Chef de service financier", "2019-09-16", "CDI", null],
+    [
+      "RAZAFINDRABE",
+      "Manda",
+      "M",
+      "Agent de dépannage des conduites d'eau",
+      "2015-06-01",
+      "CDD",
+      null,
+    ],
+    [
+      "ANDRIAMPARANY",
+      "Haja",
+      "M",
+      "Chef de service financier",
+      "2019-09-16",
+      "CDI",
+      null,
+    ],
     ["RAKOTONDRAMANANA", "Lala", "F", "Comptable", "2017-01-09", "CDI", null],
-    ["RASAMIMANANA", "Fanja", "F", "Responsable de trésorerie", "2020-02-03", "CDI", null],
-    ["RASOAMALALA", "Noro", "F", "Assistante comptable", "2021-04-12", "CDI", null],
-    ["RANDRIANASOLO", "Mamy", "M", "Chef de service approvisionnement", "2016-11-21", "CDI", null],
+    [
+      "RASAMIMANANA",
+      "Fanja",
+      "F",
+      "Responsable de trésorerie",
+      "2020-02-03",
+      "CDI",
+      null,
+    ],
+    [
+      "RASOAMALALA",
+      "Noro",
+      "F",
+      "Assistante comptable",
+      "2021-04-12",
+      "CDI",
+      null,
+    ],
+    [
+      "RANDRIANASOLO",
+      "Mamy",
+      "M",
+      "Chef de service approvisionnement",
+      "2016-11-21",
+      "CDI",
+      null,
+    ],
     ["RAKOTOARIVELO", "Tiana", "M", "Acheteur", "2014-08-04", "CDI", null],
     ["ANDRIAMBELO", "Fetra", "M", "Magasinier", "2018-05-14", "CDI", null],
-    ["RAZAFINDRAKOTO", "Hanta", "F", "Gestionnaire des commandes", "2019-07-01", "CDI", null],
-    ["RAKOTONDRAINIBE", "Hery", "M", "Chef de service logistique et administratif", "2013-10-07", "CDI", null],
-    ["RAVELOSON", "Lanto", "M", "Responsable administratif", "2020-01-13", "CDI", null],
-    ["RANDRIAMALALA", "Tovo", "M", "Responsable logistique", "2022-03-01", "CDI", null],
-    ["RASOLOFOARISON", "Miora", "F", "Agent d'entretien", "2017-09-18", "CDI", null],
+    [
+      "RAZAFINDRAKOTO",
+      "Hanta",
+      "F",
+      "Gestionnaire des commandes",
+      "2019-07-01",
+      "CDI",
+      null,
+    ],
+    [
+      "RAKOTONDRAINIBE",
+      "Hery",
+      "M",
+      "Chef de service logistique et administratif",
+      "2013-10-07",
+      "CDI",
+      null,
+    ],
+    [
+      "RAVELOSON",
+      "Lanto",
+      "M",
+      "Responsable administratif",
+      "2020-01-13",
+      "CDI",
+      null,
+    ],
+    [
+      "RANDRIAMALALA",
+      "Tovo",
+      "M",
+      "Responsable logistique",
+      "2022-03-01",
+      "CDI",
+      null,
+    ],
+    [
+      "RASOLOFOARISON",
+      "Miora",
+      "F",
+      "Agent d'entretien",
+      "2017-09-18",
+      "CDI",
+      null,
+    ],
     ["RAKOTOBE", "Jean", "M", "Chauffeur", "2012-02-20", "CDI", null],
     ["ANDRIANINA", "Faly", "M", "Coursier", "2023-06-05", "CDD", null],
     ["RAKOTOZANDRINY", "Paul", "M", "Gardien", "2018-11-05", "CDI", null],
-    ["RAKOTONDRAMASY", "Hanta", "F", "Médecin responsable", "2021-08-23", "CDI", null],
-    ["RANDRIAMAMPIANINA", "Lova", "F", "Médecin généraliste", "2022-10-03", "CDI", null],
+    [
+      "RAKOTONDRAMASY",
+      "Hanta",
+      "F",
+      "Médecin responsable",
+      "2021-08-23",
+      "CDI",
+      null,
+    ],
+    [
+      "RANDRIAMAMPIANINA",
+      "Lova",
+      "F",
+      "Médecin généraliste",
+      "2022-10-03",
+      "CDI",
+      null,
+    ],
     ["RASOANIRINA", "Mialy", "F", "Aide-soignante", "2011-04-11", "CDI", null],
-    ["RAZAFINDRAKOTO", "Saholy", "F", "Secrétaire médicale", "2019-03-25", "CDI", null],
-    ["RANDRIAMAHENINA", "Fara", "F", "Gestionnaire de pharmacie", "2024-01-08", "CDI", null],
-    ["RAKOTOARISOA", "Voahirana", "F", "Assistante médicale", "2025-02-17", "CDD", null],
-    ["ANDRIAMATOA", "Hery", "M", "Chef de service contrôle et coordination", "2025-09-01", "CDI", null],
-    ["RAKOTOMALALA", "Feno", "M", "Contrôleur de gestion", "2026-03-02", "CDI", null],
-    ["RANDRIAMBOLOLONA", "Tiana", "M", "Contrôleur technique", "2026-07-06", "CDD", null],
+    [
+      "RAZAFINDRAKOTO",
+      "Saholy",
+      "F",
+      "Secrétaire médicale",
+      "2019-03-25",
+      "CDI",
+      null,
+    ],
+    [
+      "RANDRIAMAHENINA",
+      "Fara",
+      "F",
+      "Gestionnaire de pharmacie",
+      "2024-01-08",
+      "CDI",
+      null,
+    ],
+    [
+      "RAKOTOARISOA",
+      "Voahirana",
+      "F",
+      "Assistante médicale",
+      "2025-02-17",
+      "CDD",
+      null,
+    ],
+    [
+      "ANDRIAMATOA",
+      "Hery",
+      "M",
+      "Chef de service contrôle et coordination",
+      "2025-09-01",
+      "CDI",
+      null,
+    ],
+    [
+      "RAKOTOMALALA",
+      "Feno",
+      "M",
+      "Contrôleur de gestion",
+      "2026-03-02",
+      "CDI",
+      null,
+    ],
+    [
+      "RANDRIAMBOLOLONA",
+      "Tiana",
+      "M",
+      "Contrôleur technique",
+      "2026-07-06",
+      "CDD",
+      null,
+    ],
   ];
   const employees: {
     id: string;
@@ -416,30 +840,6 @@ async function main() {
       gender,
     });
   }
-  // un ancien agent parti : son historique reste consultable (RG08)
-  const left = await prisma.employee.create({
-    data: {
-      matricule: "JA-0987",
-      lastName: "RAMANANTSOA",
-      firstName: "Patrick",
-      gender: "M",
-      positionId: positions["Électricien"],
-      hireDate: D("2009-05-04"),
-      contractType: "CDI",
-      status: "LEFT",
-      departureDate: D("2026-06-30"),
-      deletedAt: D("2026-06-30"),
-      address: "Antsirabe",
-      contracts: {
-        create: {
-          type: "CDI",
-          startDate: D("2009-05-04"),
-          endDate: D("2026-06-30"),
-        },
-      },
-    },
-  });
-
   // ── Comptes
   const [hr, tiana, hery, toky] = [
     employees[3],
@@ -479,17 +879,6 @@ async function main() {
     });
     empUsers[e.id] = u.id;
   }
-  await prisma.user.create({
-    data: {
-      email: "patrick.ramanantsoa@jirama.mg",
-      name: "Patrick Ramanantsoa",
-      passwordHash: demoHash,
-      roleId: roles.EMPLOYEE,
-      employeeId: left.id,
-      isActive: false,
-    },
-  });
-
   // ── Congés
   const today = localDay();
   const holidaySet = new Set(holidays.map(([d]) => d));
@@ -670,6 +1059,8 @@ async function main() {
   });
   const now = new Date();
   let records = 0;
+  const attendanceRows: Prisma.AttendanceRecordCreateManyInput[] = [];
+  const attendanceEventRows: Prisma.AttendanceEventCreateManyInput[] = [];
   for (const e of employees) {
     const team =
       e.teamKey === "depannage"
@@ -719,41 +1110,49 @@ async function main() {
         leave: null,
         now,
       });
-      await prisma.attendanceRecord.create({
-        data: {
-          employeeId: e.id,
-          date: d,
-          checkIn,
-          checkOut,
-          status: res.status === "UPCOMING" ? "PRESENT" : res.status,
-          lateMinutes: res.lateMinutes,
-          overtimeMinutes: res.overtimeMinutes,
-          anomalies: res.anomalies.join(",") || null,
-          events: {
-            create: [
-              {
-                employeeId: e.id,
-                type: "IN",
-                timestamp: checkIn,
-                source: "SELF",
-              },
-              ...(checkOut
-                ? [
-                    {
-                      employeeId: e.id,
-                      type: "OUT" as const,
-                      timestamp: checkOut,
-                      source: "SELF" as const,
-                    },
-                  ]
-                : []),
-            ],
-          },
-        },
+      const recordId = randomUUID();
+      attendanceRows.push({
+        id: recordId,
+        employeeId: e.id,
+        date: d,
+        checkIn,
+        checkOut,
+        status: (res.status === "UPCOMING"
+          ? "PRESENT"
+          : res.status) as AttendanceStatus,
+        lateMinutes: res.lateMinutes,
+        overtimeMinutes: res.overtimeMinutes,
+        anomalies: res.anomalies.join(",") || null,
       });
+      attendanceEventRows.push({
+        id: randomUUID(),
+        employeeId: e.id,
+        recordId,
+        type: "IN",
+        timestamp: checkIn,
+        source: "SELF",
+      });
+      if (checkOut)
+        attendanceEventRows.push({
+          id: randomUUID(),
+          employeeId: e.id,
+          recordId,
+          type: "OUT",
+          timestamp: checkOut,
+          source: "SELF",
+        });
       records++;
     }
   }
+  // Turso est distant : grouper les insertions évite un aller-retour réseau par pointage.
+  for (let i = 0; i < attendanceRows.length; i += 100)
+    await prisma.attendanceRecord.createMany({
+      data: attendanceRows.slice(i, i + 100),
+    });
+  for (let i = 0; i < attendanceEventRows.length; i += 100)
+    await prisma.attendanceEvent.createMany({
+      data: attendanceEventRows.slice(i, i + 100),
+    });
   // astreintes de la brigade de dépannage sur les 2 prochains week-ends
   const sat = addDays(today, (12 - today.getUTCDay()) % 7 || 7);
   for (const [i, emp] of [
@@ -793,7 +1192,7 @@ async function main() {
       type: "COMMUNIQUE",
       days: -12,
       content:
-        "Le service médico-social organise la visite médicale annuelle obligatoire. Les convocations par service seront affichées. Merci de vous présenter à jeun.",
+        "Le centre médical social organise la visite médicale annuelle obligatoire. Les convocations par service seront affichées. Merci de vous présenter à jeun.",
     },
     {
       title: "Fête de fin d'année du personnel",
@@ -837,7 +1236,7 @@ async function main() {
       {
         userId: hrUser.id,
         title: "Nouvelle demande de congé",
-        message: "Hery Razafindrakoto — Congé annuel (5 j)",
+        message: `${hery.firstName} ${hery.lastName} — Congé annuel (5 j)`,
         link: "/hr/leave-requests",
       },
       {
@@ -877,10 +1276,10 @@ async function main() {
   });
 
   console.log(
-    `✔ Seed terminé : ${employees.length + 1} employés, ${records} pointages.`,
+    `✔ Seed terminé : ${employees.length} employés, ${records} pointages.`,
   );
   console.log(
-    `  Admin : ${ADMIN_EMAIL}  |  RH : rh@jirama.mg  |  Employé : hery.razafindrakoto@jirama.mg`,
+    `  Admin : ${ADMIN_EMAIL}  |  RH : rh@jirama.mg  |  Employé : ${hery.firstName.toLowerCase()}.${hery.lastName.toLowerCase()}@jirama.mg`,
   );
 }
 
