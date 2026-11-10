@@ -13,15 +13,13 @@ Documentation : [installation](docs/installation.md) · [déploiement Vercel](do
 
 ## Lancer avec Docker
 
-Prérequis : Docker avec Docker Compose. Copiez `.env.docker.example` vers `.env.docker`, puis définissez une clé secrète et des mots de passe :
+Prérequis : Docker avec Docker Compose. Depuis le dossier du projet, lancez le script :
 
 ```bash
-cp .env.docker.example .env.docker
-openssl rand -base64 32  # copiez le résultat dans AUTH_SECRET
-docker compose up --build -d
+bash run.sh
 ```
 
-Au premier lancement, Docker crée la base SQLite, applique les migrations et insère automatiquement les données de démonstration. Ouvrez <http://localhost:3000>. Comptes : `admin@jirama.mg` avec `SEED_ADMIN_PASSWORD`, `rh@jirama.mg` ou un compte employé avec `SEED_DEMO_PASSWORD` (valeurs de `.env.docker`). Les données et les fichiers téléversés restent dans `data/` et `storage/` sur votre ordinateur.
+Le script crée `.env.docker` avec des secrets aléatoires si nécessaire. Il restaure la sauvegarde locale la plus récente si elle existe dans `backups/`. Sur un clone sans sauvegarde, Docker crée la base SQLite, applique les migrations et insère automatiquement les données de démonstration. Ouvrez <http://localhost:3000>. Le script affiche les identifiants de connexion. Les données et les secrets restent dans les fichiers locaux ignorés par Git.
 
 ### Sauvegarder et transmettre les données
 
