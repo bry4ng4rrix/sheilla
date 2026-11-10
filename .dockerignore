@@ -1,0 +1,12 @@
+.git
+.next
+node_modules
+data
+storage
+backups
+.env
+.env.*
+!.env.example
+!.env.docker.example
+playwright-report
+test-results

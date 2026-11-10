@@ -1,0 +1,18 @@
+services:
+  app:
+    build: .
+    container_name: jirama-grh
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: file:/app/data/grh.db
+      STORAGE_DIR: /app/storage
+      AUTH_TRUST_HOST: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+      - ./storage:/app/storage
+      - ./backups:/app/backups
